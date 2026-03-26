@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conectar Telegram - OpenClaw</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --telegram-blue: #0088cc;
+            --telegram-cyan: #229ED9;
+            --telegram-dark: #17212b;
+            --telegram-bg: #0e1621;
+            --success: #10b981;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--telegram-bg) 0%, #1e293b 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: white;
+        }
+
+        .pairing-container { max-width: 650px; width: 100%; }
+
+        .pairing-card {
+            background: rgba(23, 33, 43, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 136, 204, 0.3);
+        }
+
+        .pairing-header { text-align: center; margin-bottom: 32px; }
+        .pairing-header .logo-container {
+            width: 80px; height: 80px; background: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
+            box-shadow: 0 0 20px rgba(0, 136, 204, 0.5);
+        }
+        .pairing-header img { width: 50px; height: 50px; }
+        .pairing-header h1 { font-size: 2rem; font-weight: 700; color: white; margin-bottom: 8px; }
+        .pairing-header p { color: #94a3b8; font-size: 0.95rem; }
+
+        .method-tabs {
+            display: flex; gap: 12px; margin-bottom: 32px; background: rgba(255, 255, 255, 0.05);
+            padding: 6px; border-radius: 12px;
+        }
+        .method-tab {
+            flex: 1; padding: 14px; background: transparent; border: none; border-radius: 8px;
+            color: #94a3b8; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 0.95rem;
+        }
+        .method-tab:hover { background: rgba(0, 136, 204, 0.1); color: var(--telegram-cyan); }
+        .method-tab.active {
+            background: var(--telegram-blue); color: white; box-shadow: 0 4px 12px rgba(0, 136, 204, 0.3);
+        }
+
+        .method-content { display: none; }
+        .method-content.active { display: block; animation: fadeIn 0.3s ease-in; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group { margin-bottom: 24px; }
+        .form-group label { display: block; color: #e2e8f0; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; }
+        .form-group input {
+            width: 100%; padding: 16px 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05); color: white; font-size: 1rem; transition: all 0.3s;
+        }
+        .form-group input:focus {
+            outline: none; border-color: var(--telegram-blue);
+            background: rgba(0, 136, 204, 0.1); box-shadow: 0 0 0 4px rgba(0, 136, 204, 0.1);
+        }
+
+        .helper-card {
+            background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2);
+            padding: 18px; border-radius: 16px; margin-bottom: 24px;
+        }
+        .helper-card h6 { color: var(--telegram-cyan); font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .helper-card ul { padding-left: 20px; margin: 0; color: #94a3b8; font-size: 0.85rem; line-height: 1.6; }
+
+        .btn-custom {
+            width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: 600; font-size: 0.95rem;
+            cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-bottom: 16px;
+        }
+        .btn-primary-custom { background: var(--telegram-blue); color: white; box-shadow: 0 4px 12px rgba(0, 136, 204, 0.3); }
+        .btn-primary-custom:hover:not(:disabled) { background: var(--telegram-cyan); transform: translateY(-2px); }
+        .btn-outline-custom { background: transparent; border: 1px solid var(--telegram-blue); color: var(--telegram-cyan); }
+        .btn-outline-custom:hover:not(:disabled) { background: rgba(0, 136, 204, 0.1); }
+
+        .diagnostic-box {
+            background: #0e1621; border-radius: 12px; padding: 20px; display: none; margin-top: 16px;
+            font-family: 'Courier New', monospace; font-size: 0.85rem; border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .diagnostic-box.show { display: block; animation: slideDown 0.3s ease-out; }
+        .diag-item { margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+        .diag-success { color: var(--success); }
+        .diag-error { color: var(--danger); }
+        .diag-warning { color: var(--warning); }
+
+        @keyframes slideDown { from { max-height: 0; opacity: 0; } to { max-height: 500px; opacity: 1; } }
+
+        .spinner {
+            display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .back-link { display: block; text-align: center; margin-top: 24px; color: #94a3b8; text-decoration: none; transition: 0.3s; }
+        .back-link:hover { color: var(--telegram-cyan); }
+
+        /* Telegram Style Login (Phone Method) */
+        .phone-login-container { text-align: center; }
+        .telegram-circle-logo {
+            width: 120px; height: 120px; background: var(--telegram-blue); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; margin: 0 auto 32px;
+        }
+        .telegram-circle-logo i { font-size: 60px; color: white; margin-left: -5px; }
+        .phone-input-group { position: relative; max-width: 320px; margin: 0 auto; }
+        .phone-input-group label { position: absolute; top: -10px; left: 16px; background: var(--telegram-dark); padding: 0 8px; font-size: 0.75rem; color: #64748b; }
+        .phone-input-group input {
+            background: transparent; border: 1.5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px; padding: 14px 16px; font-size: 1.1rem; width: 100%; color: white;
+            text-align: left;
+        }
+        .phone-input-group input:focus { border-color: var(--telegram-blue); outline: none; }
+    </style>
+</head>
+<body>
+
+<div class="pairing-container">
+    <div class="pairing-card">
+        <!-- Dashboard Header -->
+        <div class="pairing-header">
+            <div class="logo-container">
+                <img src="https://telegram.org/img/t_logo.png" alt="Telegram">
+            </div>
+            <h1>Configurar Telegram</h1>
+            <p>Conecte seu Bot ou Conta Pessoal</p>
+        </div>
+
+        <!-- Method Tabs -->
+        <div class="method-tabs">
+            <button class="method-tab active" onclick="switchMethod('bot')">
+                <i class="fas fa-robot me-2"></i> Mensageiro (Bot)
+            </button>
+            <button class="method-tab" onclick="switchMethod('phone')">
+                <i class="fas fa-user-circle me-2"></i> Conta Pessoal
+            </button>
+        </div>
+
+        <!-- BOT CONTENT -->
+        <div id="method-bot" class="method-content active">
+            <div class="helper-card">
+                <h6><i class="fas fa-info-circle"></i> Instruções do Bot</h6>
+                <ul>
+                    <li>Crie um bot no <strong>@BotFather</strong> para obter o Token.</li>
+                    <li>Adicione o bot ao Canal/Grupo desejado.</li>
+                    <li><strong>Para Canais:</strong> O Bot DEVE ser administrador.</li>
+                    <li>Envie <code>/myid</code> para <strong>@RawDataBot</strong> para obter seu ID numérico.</li>
+                </ul>
+            </div>
+
+            <div class="form-group">
+                <label>Token de Acesso do Bot (BotFather)</label>
+                <input type="text" id="bot-token" placeholder="0000000000:AAEb_example_token_..." spellcheck="false">
+            </div>
+
+            <div class="form-group">
+                <label>ID do Chat/Canal (@username ou ID numérico)</label>
+                <input type="text" id="chat-id" placeholder="@meucanal ou -100123456789" spellcheck="false">
+            </div>
+
+            <button class="btn-custom btn-primary-custom" id="btn-test" onclick="testConnection()">
+                <i class="fas fa-vial"></i> Testar Conexão
+            </button>
+
+            <button class="btn-custom btn-outline-custom" id="btn-save" disabled onclick="saveConfig()">
+                <i class="fas fa-save"></i> Salvar e Ativar
+            </button>
+
+            <div id="diagnostic-box" class="diagnostic-box">
+                <div id="diag-token" class="diag-item"><i class="fas fa-circle-notch fa-spin"></i> Validando Token...</div>
+                <div id="diag-chat" class="diag-item"><i class="fas fa-circle-notch fa-spin"></i> Localizando Chat...</div>
+                <div id="diag-admin" class="diag-item"><i class="fas fa-circle-notch fa-spin"></i> Verificando permissões...</div>
+            </div>
+        </div>
+
+        <!-- PHONE CONTENT (Aesthetics matching the image) -->
+        <div id="method-phone" class="method-content">
+            <div class="phone-login-container">
+                <div class="telegram-circle-logo">
+                    <i class="fas fa-paper-plane"></i>
+                </div>
+                <h4 class="mb-3">Seu Telefone</h4>
+                <p class="text-muted mb-5">Por favor, confirme o código do país e digite seu número de telefone.</p>
+
+                <div class="phone-input-group mb-4">
+                    <label>País</label>
+                    <input type="text" value="Brazil" readonly>
+                </div>
+
+                <div class="phone-input-group mb-5">
+                    <label>Número do telefone</label>
+                    <input type="tel" id="user-phone" placeholder="+55 11 99999-9999">
+                </div>
+
+                <div class="form-check d-flex justify-content-center mb-5">
+                    <input class="form-check-input me-2" type="checkbox" id="keep-signed" checked>
+                    <label class="form-check-label text-muted" for="keep-signed">Keep me signed in</label>
+                </div>
+
+                <button class="btn-custom btn-primary-custom" onclick="loginRequest()">
+                    PRÓXIMO <i class="fas fa-arrow-right ms-2"></i>
+                </button>
+
+                <p class="mt-4"><a href="#" class="text-info text-decoration-none">LOG IN BY QR CODE</a></p>
+                <p><a href="#" class="text-info text-decoration-none">CONTINUAR EM PORTUGUÊS</a></p>
+            </div>
+        </div>
+
+        <a href="/" class="back-link"><i class="fas fa-chevron-left me-2"></i> Voltar para o Dashboard</a>
+    </div>
+</div>
+
+<script>
+    const API_URL = "/api";
+    let isVerified = false;
+
+    function switchMethod(method) {
+        document.querySelectorAll('.method-tab').forEach(t => t.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        document.querySelectorAll('.method-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`method-${method}`).classList.add('active');
+    }
+
+    async function testConnection() {
+        const token = document.getElementById('bot-token').value.trim();
+        const chatId = document.getElementById('chat-id').value.trim();
+        const btn = document.getElementById('btn-test');
+        const diagBox = document.getElementById('diagnostic-box');
+        
+        if (!token || !chatId) {
+            alert('Por favor, preencha o Token e o ID do Chat.');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Testando...';
+        diagBox.classList.add('show');
+        resetDiags();
+
+        try {
+            // STEP 1: Validate Token
+            updateDiag('diag-token', 'Validando Token...', 'loading');
+            const botInfoResponse = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+            const botInfo = await botInfoResponse.json();
+            
+            if (!botInfo.ok) throw new Error('Token Inválido!');
+            updateDiag('diag-token', `Bot logado: @${botInfo.result.username}`, 'success');
+
+            // STEP 2: Locate Chat
+            updateDiag('diag-chat', 'Localizando Chat...', 'loading');
+            const chatInfoResponse = await fetch(`https://api.telegram.org/bot${token}/getChat?chat_id=${chatId}`);
+            const chatInfo = await chatInfoResponse.json();
+            
+            if (!chatInfo.ok) {
+                updateDiag('diag-chat', '❌ Chat não encontrado! Verifique o ID.', 'error');
+                throw new Error('Chat não encontrado');
+            }
+            updateDiag('diag-chat', `Chat encontrado: ${chatInfo.result.title || chatInfo.result.username || chatInfo.result.first_name}`, 'success');
+
+            // STEP 3: Verify Admin
+            updateDiag('diag-admin', 'Verificando permissões...', 'loading');
+            const adminResponse = await fetch(`https://api.telegram.org/bot${token}/getChatMember?chat_id=${chatId}&user_id=${botInfo.result.id}`);
+            const adminInfo = await adminResponse.json();
+            
+            if (adminInfo.ok && (adminInfo.result.status === 'administrator' || adminInfo.result.status === 'creator')) {
+                updateDiag('diag-admin', '✅ Bot é administrador do chat!', 'success');
+                isVerified = true;
+                document.getElementById('btn-save').disabled = false;
+            } else {
+                updateDiag('diag-admin', '⚠️ Bot NÃO é administrador (opcional em grupos, obrigatório em canais).', 'warning');
+                isVerified = true; // Still allow save for groups
+                document.getElementById('btn-save').disabled = false;
+            }
+
+        } catch (error) {
+            console.error(error);
+            if (!error.message.includes('Chat')) {
+                updateDiag('diag-token', 'Erro na validação do Token.', 'error');
+            }
+            isVerified = false;
+            document.getElementById('btn-save').disabled = true;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-vial"></i> Testar Novamente';
+        }
+    }
+
+    function resetDiags() {
+        ['diag-token', 'diag-chat', 'diag-admin'].forEach(id => {
+            const el = document.getElementById(id);
+            el.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Aguardando...';
+            el.className = 'diag-item';
+        });
+    }
+
+    function updateDiag(id, text, type) {
+        const el = document.getElementById(id);
+        let icon = '<i class="fas fa-circle-notch fa-spin"></i> ';
+        if (type === 'success') icon = '<i class="fas fa-check-circle text-success"></i> ';
+        if (type === 'error') icon = '<i class="fas fa-times-circle text-danger"></i> ';
+        if (type === 'warning') icon = '<i class="fas fa-exclamation-triangle text-warning"></i> ';
+        
+        el.innerHTML = icon + text;
+    }
+
+    async function saveConfig() {
+        const token = document.getElementById('bot-token').value.trim();
+        const chatId = document.getElementById('chat-id').value.trim();
+        
+        showStatus('⏳ Salvando configuração...', 'info');
+        
+        try {
+            const response = await fetch(`${API_URL}/admin/storage/backup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    telegram: { token, chatId, enabled: true, timestamp: new Date().toISOString() }
+                })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                alert('✅ Configuração do Telegram salva com sucesso e persistida no R2!');
+                window.location.href = '/';
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (err) {
+            alert('❌ Erro ao salvar: ' + err.message);
+        }
+    }
+
+    function loginRequest() {
+        alert('Este método (Login de Conta Pessoal) está em desenvolvimento para o Modo Lite. Use o método "Bot" para conexão imediata!');
+    }
+</script>
+
+</body>
+</html>

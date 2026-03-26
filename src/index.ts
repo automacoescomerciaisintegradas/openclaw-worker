@@ -31,6 +31,7 @@ import { publicRoutes, api, adminUi, debug, cdp } from './routes';
 import loadingPageHtml from './assets/loading.html';
 import configErrorHtml from './assets/config-error.html';
 import whatsappHtml from './assets/whatsapp/index.html';
+import telegramHtml from './assets/telegram/index.html';
 
 /**
  * Transform error messages from the gateway to be more user-friendly.
@@ -142,6 +143,9 @@ app.use('*', async (c, next) => {
 
 // WhatsApp Pairing UI (Lite Mode compatible)
 app.get('/whatsapp', (c) => c.html(whatsappHtml));
+
+// Telegram Pairing UI (Lite Mode compatible)
+app.get('/telegram', (c) => c.html(telegramHtml));
 
 // Mount public routes first (before auth middleware)
 // Includes: /sandbox-health, /logo.png, /logo-small.png, /api/status, /_admin/assets/*
