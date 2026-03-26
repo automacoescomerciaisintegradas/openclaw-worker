@@ -30,6 +30,7 @@ import { ensureopenclawGateway, findExistingopenclawProcess, syncToR2 } from './
 import { publicRoutes, api, adminUi, debug, cdp } from './routes';
 import loadingPageHtml from './assets/loading.html';
 import configErrorHtml from './assets/config-error.html';
+import whatsappHtml from './assets/whatsapp/index.html';
 
 /**
  * Transform error messages from the gateway to be more user-friendly.
@@ -138,6 +139,9 @@ app.use('*', async (c, next) => {
 // =============================================================================
 // PUBLIC ROUTES: No Cloudflare Access authentication required
 // =============================================================================
+
+// WhatsApp Pairing UI (Lite Mode compatible)
+app.get('/whatsapp', (c) => c.html(whatsappHtml));
 
 // Mount public routes first (before auth middleware)
 // Includes: /sandbox-health, /logo.png, /logo-small.png, /api/status, /_admin/assets/*
