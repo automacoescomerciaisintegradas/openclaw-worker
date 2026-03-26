@@ -218,10 +218,14 @@ adminApi.get('/storage', async (c) => {
   });
 });
 
-// POST /api/admin/storage/sync - Trigger a manual sync to R2
+// POST /api/admin/storage/sync - Trigger a manual sync to R2 (Sandbox only)
 adminApi.post('/storage/sync', async (c) => {
   const sandbox = c.get('sandbox');
   
+  if (!sandbox) {
+    return c.json({ error: 'Sync to R2 via Sandbox is not available in Lite Mode' }, 400);
+  }
+
   const result = await syncToR2(sandbox, c.env);
   
   if (result.success) {
@@ -237,6 +241,41 @@ adminApi.post('/storage/sync', async (c) => {
       error: result.error,
       details: result.details,
     }, status);
+  }
+});
+
+/**
+ * POST /api/admin/storage/backup - Direct R2 Backup (Lite Mode compatible)
+ * Saves the provided JSON body directly to R2.
+ */
+adminApi.post('/storage/backup', async (c) => {
+  const data = await c.req.json();
+  const filename = `backups/contacts_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+
+  try {
+    // Check if bucket binding is available
+    if (!c.env.openclaw_BUCKET) {
+      throw new Error('openclaw_BUCKET binding is missing');
+    }
+
+    // Save to R2 using native Workers API
+    await c.env.openclaw_BUCKET.put(filename, JSON.stringify(data, null, 2), {
+      httpMetadata: { contentType: 'application/json' }
+    });
+
+    console.log(`[R2] Manual backup saved: ${filename}`);
+    return c.json({ 
+      success: true, 
+      message: 'Backup salvo com sucesso no R2!', 
+      path: filename 
+    });
+  } catch (error) {
+    console.error('[R2] Backup failed:', error);
+    return c.json({ 
+      success: false, 
+      error: 'Falha ao salvar backup no Cloudflare R2',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
   }
 });
 
