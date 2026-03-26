@@ -239,7 +239,17 @@ app.all('*', async (c) => {
     console.log('[LITE] Serving from ASSETS or 404');
     const acceptsHtml = request.headers.get('Accept')?.includes('text/html');
     
-    // For root path, serve index.html from ASSETS
+    // For V1 API calls (WhatsApp/Sandbox) in Lite Mode, return a clear JSON error
+    // instead of letting it fallback to index.html (which causes JSON parse errors)
+    if (url.pathname.startsWith('/v1/')) {
+      return c.json({
+        error: 'Sandbox not available',
+        message: 'WhatsApp features require a Sandbox container. You are running in Lite Mode.',
+        mode: 'LITE'
+      }, 503);
+    }
+    
+    // For root path or HTML requests, serve index.html from ASSETS
     if (url.pathname === '/' || acceptsHtml) {
       console.log('[LITE] Serving index.html from ASSETS');
       return c.env.ASSETS.fetch(new Request(new URL('/', url.origin).toString(), request));
