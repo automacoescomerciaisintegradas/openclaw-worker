@@ -408,6 +408,12 @@ async function scheduled(
   env: openclawEnv,
   _ctx: ExecutionContext
 ): Promise<void> {
+  // Guard for Lite Mode (no Sandbox container)
+  if (!env.Sandbox) {
+    console.log('[cron] Skipping backup sync: Sandbox not available in Lite Mode.');
+    return;
+  }
+
   const options = buildSandboxOptions(env);
   const sandbox = getSandbox(env.Sandbox, 'openclaw', options);
 
