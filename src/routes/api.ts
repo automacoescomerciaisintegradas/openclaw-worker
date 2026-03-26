@@ -28,11 +28,13 @@ adminApi.get('/devices', async (c) => {
   const sandbox = c.get('sandbox');
 
   try {
-    // Ensure openclaw is running first
+    // Ensure openclaw is running first (Sandbox only)
+    if (!sandbox) {
+      return c.json({ error: 'Device management requires a Sandbox. Lite Mode is currently active.' }, 400);
+    }
     await ensureopenclawGateway(sandbox, c.env);
 
-    // Run openclaw CLI to list devices (CLI is still named clawdbot until upstream renames)
-    // Must specify --url to connect to the gateway running in the same container
+    // Run openclaw CLI to list devices
     const proc = await sandbox.startProcess('clawdbot devices list --json --url ws://localhost:18789');
     await waitForProcess(proc, CLI_TIMEOUT_MS);
 
@@ -81,7 +83,10 @@ adminApi.post('/devices/:requestId/approve', async (c) => {
   }
 
   try {
-    // Ensure openclaw is running first
+    // Ensure openclaw is running first (Sandbox only)
+    if (!sandbox) {
+      return c.json({ error: 'Device approval requires a Sandbox. Lite Mode is currently active.' }, 400);
+    }
     await ensureopenclawGateway(sandbox, c.env);
 
     // Run openclaw CLI to approve the device (CLI is still named clawdbot)
@@ -113,7 +118,10 @@ adminApi.post('/devices/approve-all', async (c) => {
   const sandbox = c.get('sandbox');
 
   try {
-    // Ensure openclaw is running first
+    // Ensure openclaw is running first (Sandbox only)
+    if (!sandbox) {
+      return c.json({ error: 'Bulk approval requires a Sandbox. Lite Mode is currently active.' }, 400);
+    }
     await ensureopenclawGateway(sandbox, c.env);
 
     // First, get the list of pending devices (CLI is still named clawdbot)
@@ -192,16 +200,18 @@ adminApi.get('/storage', async (c) => {
   // If R2 is configured, check for last sync timestamp
   if (hasCredentials) {
     try {
-      // Mount R2 if not already mounted
-      await mountR2Storage(sandbox, c.env);
-      
-      // Check for sync marker file
-      const proc = await sandbox.startProcess(`cat ${R2_MOUNT_PATH}/.last-sync 2>/dev/null || echo ""`);
-      await waitForProcess(proc, 5000);
-      const logs = await proc.getLogs();
-      const timestamp = logs.stdout?.trim();
-      if (timestamp && timestamp !== '') {
-        lastSync = timestamp;
+      // Check for sync marker file (Sandbox only)
+      if (sandbox) {
+        // Mount R2 if not already mounted
+        await mountR2Storage(sandbox, c.env);
+        
+        const proc = await sandbox.startProcess(`cat ${R2_MOUNT_PATH}/.last-sync 2>/dev/null || echo ""`);
+        await waitForProcess(proc, 5000);
+        const logs = await proc.getLogs();
+        const timestamp = logs.stdout?.trim();
+        if (timestamp && timestamp !== '') {
+          lastSync = timestamp;
+        }
       }
     } catch {
       // Ignore errors checking sync status
@@ -284,6 +294,11 @@ adminApi.post('/gateway/restart', async (c) => {
   const sandbox = c.get('sandbox');
 
   try {
+    // Process management requires a Sandbox
+    if (!sandbox) {
+      return c.json({ error: 'Gateway control is not available in Lite Mode.' }, 400);
+    }
+
     // Find and kill the existing gateway process
     const existingProcess = await findExistingopenclawProcess(sandbox);
     
