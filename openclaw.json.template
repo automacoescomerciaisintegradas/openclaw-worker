@@ -1,11 +1,102 @@
 {
+  "browser": {
+    "headless": true,
+    "noSandbox": true,
+    "defaultProfile": "openclaw"
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true
+  },
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "kimi": {
+        "baseUrl": "https://api.moonshot.cn/v1",
+        "apiKey": "${MOONSHOT_API_KEY}",
+        "api": "openai-chat-completions",
+        "models": [
+          {
+            "id": "kimi-k2-5",
+            "name": "Kimi K2.5",
+            "reasoning": true,
+            "input": ["text"],
+            "contextWindow": 32768,
+            "maxTokens": 32768,
+            "cost": {
+              "input": 0.000003,
+              "output": 0.000006,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            }
+          }
+        ]
+      }
+    }
+  },
   "agents": {
     "defaults": {
-      "workspace": "/root/clawd"
+      "model": {
+        "primary": "gpt",
+        "fallbacks": [
+          "sonnet",
+          "gemini",
+          "xai",
+          "kimi"
+        ]
+      },
+      "models": {
+        "anthropic/claude-sonnet-4-5": {
+          "alias": "sonnet"
+        },
+        "openai/gpt-5.2": {
+          "alias": "gpt"
+        },
+        "google/gemini-3-flash-preview": {
+          "alias": "gemini"
+        },
+        "xai/grok-4-1-fast-reasoning": {
+          "alias": "xai"
+        },
+        "moonshot/kimi-k2.5": {
+          "alias": "kimi"
+        }
+      }
     }
   },
   "gateway": {
-    "port": 18789,
-    "mode": "local"
+    "mode": "local",
+    "controlUi": {
+      "allowInsecureAuth": true
+    },
+    "auth": {
+      "mode": "token",
+      "token": "1c703d78369ed363acbf0e0aabb90fdaf8d9715d60e987d8164c5d95b9ffea75"
+    },
+    "remote": {
+      "token": "1c703d78369ed363acbf0e0aabb90fdaf8d9715d60e987d8164c5d95b9ffea75"
+    }
+  },
+  "plugins": {
+    "entries": {
+      "whatsapp": { "enabled": true },
+      "discord": { "enabled": true },
+      "imessage": { "enabled": false },
+      "telegram": { "enabled": true },
+      "slack": { "enabled": true },
+      "nostr": { "enabled": true },
+      "signal": { "enabled": false },
+      "googlechat": { "enabled": true }
+    }
+  },
+  "mcpServers": {
+    "cloudflare": {
+      "command": "npx",
+      "args": ["mcp-remote@latest", "https://builds.mcp.cloudflare.com/mcp"]
+    }
+  },
+  "meta": {
+    "lastTouchedAt": "2026-03-26T14:44:50Z"
   }
 }

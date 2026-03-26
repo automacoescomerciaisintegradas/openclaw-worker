@@ -46,7 +46,7 @@ function transformErrorMessage(message: string, host: string): string {
   return message;
 }
 
-export { Sandbox };
+
 
 /**
  * Validate required environment variables.
@@ -59,6 +59,8 @@ function validateRequiredEnv(env: openclawEnv): string[] {
     missing.push('openclaw_GATEWAY_TOKEN');
   }
 
+  // Cloudflare Access is optional in Lite Mode
+  /*
   if (!env.CF_ACCESS_TEAM_DOMAIN) {
     missing.push('CF_ACCESS_TEAM_DOMAIN');
   }
@@ -66,6 +68,7 @@ function validateRequiredEnv(env: openclawEnv): string[] {
   if (!env.CF_ACCESS_AUD) {
     missing.push('CF_ACCESS_AUD');
   }
+  */
 
   // Check for AI Gateway or direct Anthropic configuration
   if (env.AI_GATEWAY_API_KEY) {
@@ -73,9 +76,9 @@ function validateRequiredEnv(env: openclawEnv): string[] {
     if (!env.AI_GATEWAY_BASE_URL) {
       missing.push('AI_GATEWAY_BASE_URL (required when using AI_GATEWAY_API_KEY)');
     }
-  } else if (!env.ANTHROPIC_API_KEY) {
-    // Direct Anthropic access requires API key
-    missing.push('ANTHROPIC_API_KEY or AI_GATEWAY_API_KEY');
+  } else if (!env.ANTHROPIC_API_KEY && !env.MOONSHOT_API_KEY) {
+    // Lite mode allows Moonshot as alternative to Anthropic
+    missing.push('ANTHROPIC_API_KEY, MOONSHOT_API_KEY or AI_GATEWAY_API_KEY');
   }
 
   return missing;
@@ -115,17 +118,20 @@ const app = new Hono<AppEnv>();
 app.use('*', async (c, next) => {
   const url = new URL(c.req.url);
   console.log(`[REQ] ${c.req.method} ${url.pathname}${url.search}`);
-  console.log(`[REQ] Has ANTHROPIC_API_KEY: ${!!c.env.ANTHROPIC_API_KEY}`);
+  console.log(`[REQ] Has Sandbox: ${!!c.env.Sandbox}`);
   console.log(`[REQ] DEV_MODE: ${c.env.DEV_MODE}`);
-  console.log(`[REQ] DEBUG_ROUTES: ${c.env.DEBUG_ROUTES}`);
   await next();
 });
 
-// Middleware: Initialize sandbox for all requests
+// Middleware: Initialize sandbox (OPTIONAL in Lite Mode)
 app.use('*', async (c, next) => {
-  const options = buildSandboxOptions(c.env);
-  const sandbox = getSandbox(c.env.Sandbox, 'openclaw', options);
-  c.set('sandbox', sandbox);
+  if (c.env.Sandbox) {
+    const options = buildSandboxOptions(c.env);
+    const sandbox = getSandbox(c.env.Sandbox, 'openclaw', options);
+    c.set('sandbox', sandbox);
+  } else {
+    console.log('[LITE] Running without Sandbox container');
+  }
   await next();
 });
 
@@ -216,29 +222,23 @@ app.all('*', async (c) => {
   const sandbox = c.get('sandbox');
   const request = c.req.raw;
   const url = new URL(request.url);
-
-  console.log('[PROXY] Handling request:', url.pathname);
-
-  // Check if gateway is already running
-  const existingProcess = await findExistingopenclawProcess(sandbox);
-  const isGatewayReady = existingProcess !== null && existingProcess.status === 'running';
-  
-  // For browser requests (non-WebSocket, non-API), show loading page if gateway isn't ready
   const isWebSocketRequest = request.headers.get('Upgrade')?.toLowerCase() === 'websocket';
-  const acceptsHtml = request.headers.get('Accept')?.includes('text/html');
-  
-  if (!isGatewayReady && !isWebSocketRequest && acceptsHtml) {
-    console.log('[PROXY] Gateway not ready, serving loading page');
+
+  console.log(`[PROXY] Handling request (${sandbox ? 'Sandbox' : 'Lite'}):`, url.pathname);
+
+  // If no sandbox exists (Lite Mode), fallback to ASSETS for everything
+  if (!sandbox) {
+    console.log('[LITE] Serving from ASSETS or 404');
+    const acceptsHtml = request.headers.get('Accept')?.includes('text/html');
     
-    // Start the gateway in the background (don't await)
-    c.executionCtx.waitUntil(
-      ensureopenclawGateway(sandbox, c.env).catch((err: Error) => {
-        console.error('[PROXY] Background gateway start failed:', err);
-      })
-    );
+    // For root path, serve index.html from ASSETS
+    if (url.pathname === '/' || acceptsHtml) {
+      console.log('[LITE] Serving index.html from ASSETS');
+      return c.env.ASSETS.fetch(new Request(new URL('/', url.origin).toString(), request));
+    }
     
-    // Return the loading page immediately
-    return c.html(loadingPageHtml);
+    // Fallback to ASSETS for other files (JS, CSS, etc.)
+    return c.env.ASSETS.fetch(request);
   }
 
   // Ensure openclaw is running (this will wait for startup)
@@ -249,8 +249,8 @@ app.all('*', async (c) => {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     let hint = 'Check worker logs with: wrangler tail';
-    if (!c.env.ANTHROPIC_API_KEY) {
-      hint = 'ANTHROPIC_API_KEY is not set. Run: wrangler secret put ANTHROPIC_API_KEY';
+    if (!c.env.ANTHROPIC_API_KEY && !c.env.MOONSHOT_API_KEY) {
+      hint = 'ANTHROPIC_API_KEY or MOONSHOT_API_KEY is not set. Run: wrangler secret put <KEY_NAME>';
     } else if (errorMessage.includes('heap out of memory') || errorMessage.includes('OOM')) {
       hint = 'Gateway ran out of memory. Try again or check for memory leaks.';
     }

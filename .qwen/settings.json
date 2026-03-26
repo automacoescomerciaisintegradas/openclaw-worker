@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(c:\\users\\autom\\appdata\\local\\cloudflared\\cloudflared.exe *)",
+      "Bash(timeout *)",
+      "Bash(npx *)",
+      "Bash(tasklist)",
+      "Bash(findstr *)"
+    ]
+  },
+  "$version": 3
+}
