@@ -1,44 +1,59 @@
-FROM docker.io/cloudflare/sandbox:0.7.0
+# =============================================================================
+# Dockerfile Híbrido - Cleudocode Hub (RAIZ)
+# Arquitetura: Ubuntu 24.04 + Node.js 22 + Python 3.12
+# =============================================================================
 
-# Install Node.js 22 (required by clawdbot) and rsync (for R2 backup sync)
-# The base image has Node 20, we need to replace it with Node 22
-# Using direct binary download for reliability
-ENV NODE_VERSION=22.13.1
-RUN apt-get update && apt-get install -y xz-utils ca-certificates rsync \
-    && curl -fsSLk https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz -o /tmp/node.tar.xz \
-    && tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 \
-    && rm /tmp/node.tar.xz \
-    && node --version \
-    && npm --version
+FROM ubuntu:24.04
 
-# Install pnpm globally
-RUN npm install -g pnpm
+# Prevenir prompts interativos durante a instalação
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install openclaw (CLI is still named clawdbot until upstream renames)
-# Pin to specific version for reproducible builds
-RUN npm install -g clawdbot@2026.1.24-3 \
-    && clawdbot --version
+# Instalar dependências do sistema
+RUN apt-get update && apt-get install -y \
+    curl \
+    gnupg \
+    build-essential \
+    python3.12 \
+    python3.12-venv \
+    python3-pip \
+    ffmpeg \
+    libvips-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create openclaw directories (paths still use clawdbot until upstream renames)
-# Templates are stored in /root/.clawdbot-templates for initialization
-RUN mkdir -p /root/.clawdbot \
-    && mkdir -p /root/.clawdbot-templates \
-    && mkdir -p /root/clawd \
-    && mkdir -p /root/clawd/skills
+# Instalar Node.js 22 (LTS atual)
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g npm@latest
 
-# Copy startup script
-# Build cache bust: 2026-01-28-v26-browser-skill
-COPY start-openclaw.sh /usr/local/bin/start-openclaw.sh
-RUN chmod +x /usr/local/bin/start-openclaw.sh
+# Criar estrutura de diretórios
+WORKDIR /app
+RUN mkdir -p /app/gateway /app/hub /app/scripts /app/ucm
 
-# Copy default configuration template
-COPY openclaw.json.template /root/.clawdbot-templates/openclaw.json.template
+# Copiar arquivos de dependências primeiro (otimização de cache)
+COPY package.json package-lock.json /app/gateway/
+RUN cd /app/gateway && npm install --production
 
-# Copy custom skills
-COPY skills/ /root/clawd/skills/
+# Copiar todo o código para o container
+COPY . /app/gateway/
 
-# Set working directory
-WORKDIR /root/clawd
+# Configurar ambiente Python (venv)
+RUN python3.12 -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
 
-# Expose the gateway port
-EXPOSE 18789
+# Instalar dependências Python se houver requirements na raiz
+RUN if [ -f "/app/gateway/requirements.txt" ]; then /app/venv/bin/pip install -r /app/gateway/requirements.txt; fi
+
+# Copiar scripts de inicialização
+COPY ./cleudocode/scripts/start.sh /app/scripts/start.sh
+RUN chmod +x /app/scripts/start.sh
+
+# Expor portas
+# 8080: Gateway API / Dashboard (Recomendado para Easypanel)
+EXPOSE 8080 19000
+
+# Volume para persistência (UCM)
+VOLUME ["/app/ucm"]
+
+# Definir Entrypoint
+ENTRYPOINT ["/app/scripts/start.sh"]
