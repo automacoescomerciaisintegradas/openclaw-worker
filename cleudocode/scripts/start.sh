@@ -27,13 +27,8 @@ echo "📦 Iniciando Core Python (Daemon)..."
 echo "🌐 Iniciando Gateway Node.js (Dashboard)..."
 cd /app/gateway
 
-# Se estivermos em produção, rodar via build
-if [ "$NODE_ENV" = "production" ]; then
-    npm run build
-    npm run start
-else
-    npm run dev
-fi
+# Iniciar Gateway Node.js de Produção
+npm run start:server
 
 # Manter o container vivo e monitorando os processos
 wait -n

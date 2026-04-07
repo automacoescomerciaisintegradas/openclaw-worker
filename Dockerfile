@@ -30,12 +30,11 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 WORKDIR /app
 RUN mkdir -p /app/gateway /app/hub /app/scripts /app/ucm
 
-# Copiar arquivos de dependências primeiro (otimização de cache)
-COPY package.json package-lock.json /app/gateway/
-RUN cd /app/gateway && npm install --production
-
 # Copiar todo o código para o container
 COPY . /app/gateway/
+
+# Build do servidor Node.js
+RUN cd /app/gateway && npm install && npm run build:server
 
 # Configurar ambiente Python (venv)
 RUN python3.12 -m venv /app/venv

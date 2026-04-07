@@ -112,7 +112,7 @@ function buildSandboxOptions(env: openclawEnv): SandboxOptions {
 }
 
 // Main app
-const app = new Hono<AppEnv>();
+export const app = new Hono<AppEnv>();
 
 // =============================================================================
 // LITE MODE / DASHBOARDS (High Priority)
@@ -152,6 +152,11 @@ app.route('/telegram-webhook', telegramRoutes);
 
 // Middleware: Log every request
 app.use('*', async (c, next) => {
+  // Ponte para Node.js: injetar process.env no contexto se estiver vazio
+  if (typeof process !== 'undefined' && process.env) {
+    c.env = { ...process.env, ...c.env };
+  }
+  
   const url = new URL(c.req.url);
   console.log(`[REQ] ${c.req.method} ${url.pathname}${url.search}`);
   console.log(`[REQ] Has Sandbox: ${!!c.env.Sandbox}`);

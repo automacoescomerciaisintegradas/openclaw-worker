@@ -6,9 +6,11 @@
   "description": "Worker para o projeto OpenClaw baseado em openclaw",
   "scripts": {
     "build": "vite build",
+    "build:server": "tsc -p tsconfig.server.json",
     "deploy": "npm run build && wrangler deploy",
     "dev": "vite dev",
     "start": "wrangler dev",
+    "start:server": "node dist/src/server.js",
     "types": "wrangler types",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -17,6 +19,8 @@
   },
   "dependencies": {
     "@cloudflare/puppeteer": "^1.0.5",
+    "@hono/node-server": "^1.19.13",
+    "dotenv": "^17.4.1",
     "hono": "^4.11.6",
     "jose": "^6.0.0",
     "react": "^19.0.0",
