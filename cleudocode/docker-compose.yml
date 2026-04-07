@@ -1,0 +1,51 @@
+# =============================================================================
+# docker-compose.yml — Cleudocode Hub (Produção VPS)
+# Otimizado para: Portabilidade, Resiliência e Persistência UCM
+# =============================================================================
+
+services:
+  cleudocode-hub:
+    build:
+      context: ..
+      dockerfile: ./cleudocode/Dockerfile
+    container_name: cleudo-app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - UCM_PATH=/app/ucm
+      # Chaves de API devem ser passadas via .env no servidor
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - WHATSAPP_SESSION_NAME=${WHATSAPP_SESSION_NAME:-cleudo-session}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ../ucm:/app/ucm
+      - ../gateway-data:/app/gateway/data
+      - /var/run/docker.sock:/var/run/docker.sock # Caso precise gerenciar outros containers
+    ports:
+      - "80:8080" # Mapeia porta 80 do host para 8080 do container (Gateway)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+    networks:
+      - cleudo-net
+
+  # Inclusão opcional de Ollama se a VPS tiver suporte a GPU/Recursos suficientes
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: cleudo-ollama
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ollama-data:/root/.ollama
+  #   networks:
+  #     - cleudo-net
+
+networks:
+  cleudo-net:
+    driver: bridge
+
+volumes:
+  ollama-data:
+    name: cleudo-ollama-data

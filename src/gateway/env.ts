@@ -42,7 +42,9 @@ export function buildEnvVars(env: openclawEnv): Record<string, string> {
     envVars.ANTHROPIC_BASE_URL = env.ANTHROPIC_BASE_URL;
   }
   // Map openclaw_GATEWAY_TOKEN to CLAWDBOT_GATEWAY_TOKEN (container expects this name)
-  if (env.openclaw_GATEWAY_TOKEN) envVars.CLAWDBOT_GATEWAY_TOKEN = env.openclaw_GATEWAY_TOKEN;
+  // Accept both openclaw_GATEWAY_TOKEN and GATEWAY_TOKEN for backwards compatibility
+  const gatewayToken = env.openclaw_GATEWAY_TOKEN || (env as any).GATEWAY_TOKEN;
+  if (gatewayToken) envVars.CLAWDBOT_GATEWAY_TOKEN = gatewayToken;
   if (env.DEV_MODE) envVars.CLAWDBOT_DEV_MODE = env.DEV_MODE; // Pass DEV_MODE as CLAWDBOT_DEV_MODE to container
   if (env.CLAWDBOT_BIND_MODE) envVars.CLAWDBOT_BIND_MODE = env.CLAWDBOT_BIND_MODE;
   if (env.TELEGRAM_BOT_TOKEN) envVars.TELEGRAM_BOT_TOKEN = env.TELEGRAM_BOT_TOKEN;

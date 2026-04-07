@@ -59,9 +59,9 @@
 		"binding": "BROWSER",
 	},
 	// Sandbox binding for the openclaw gateway container
-	"sandbox": {
-		"binding": "Sandbox",
-	},
+	// "sandbox": {
+	// 	"binding": "Sandbox",
+	// },
 	// Note: CF_ACCOUNT_ID should be set via `wrangler secret put CF_ACCOUNT_ID`
 	// Secrets to configure via `wrangler secret put`:
 	// - ANTHROPIC_API_KEY: Your Anthropic API key
@@ -83,6 +83,6 @@
 	"preview_urls": false,
 	"vars": {
 		"ANTHROPIC_API_KEY": "sk-ant-api03-1DfFTlD5stk1v6FWMT98mQp_MM8w4GyW4P08Zf9tKGd4Zv5lSKPLYEBipptXvyTdi1uqwgLEzqFnzmt2dNP-YQ-KFibkgAA",
-		"GATEWAY_TOKEN": "+umGOSS+9DozEixC389OtLuX4WFN4Kta9X1SeJ9rrMA="
+		"openclaw_GATEWAY_TOKEN": "+umGOSS+9DozEixC389OtLuX4WFN4Kta9X1SeJ9rrMA="
 	}
 }

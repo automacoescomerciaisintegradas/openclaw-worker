@@ -194,6 +194,10 @@
                 <i class="fas fa-save"></i> Salvar e Ativar
             </button>
 
+            <button class="btn-custom btn-primary-custom d-none" id="btn-webhook" onclick="setupWebhook()">
+                <i class="fas fa-plug"></i> Ativar Assistente I.A. (Vincular ao Worker)
+            </button>
+
             <div id="diagnostic-box" class="diagnostic-box">
                 <div id="diag-token" class="diag-item"><i class="fas fa-circle-notch fa-spin"></i> Validando Token...</div>
                 <div id="diag-chat" class="diag-item"><i class="fas fa-circle-notch fa-spin"></i> Localizando Chat...</div>
@@ -349,12 +353,42 @@
             const result = await response.json();
             if (result.success) {
                 alert('✅ Configuração do Telegram salva com sucesso e persistida no R2!');
-                window.location.href = '/';
+                document.getElementById('btn-webhook').classList.remove('d-none');
+                document.getElementById('btn-save').classList.add('d-none');
             } else {
                 throw new Error(result.error);
             }
         } catch (err) {
             alert('❌ Erro ao salvar: ' + err.message);
+        }
+    }
+
+    async function setupWebhook() {
+        const token = document.getElementById('bot-token').value.trim();
+        const btn = document.getElementById('btn-webhook');
+        
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Ativando...';
+        
+        try {
+            const response = await fetch(`${API_URL}/admin/telegram/setup-webhook`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                alert('🚀 ASSISTENTE ATIVADO! O Bot agora está vinculado a este Cloudflare Worker e responderá usando o Kimi K2.5.');
+                window.location.href = '/';
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (err) {
+            alert('❌ Erro ao ativar Webhook: ' + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plug"></i> Ativar Assistente I.A.';
         }
     }
 

@@ -1,0 +1,14 @@
+# Todos
+- [/] Validar host OS (Windows com Docker Desktop + Linux Server)
+- [ ] Instalar Docker CE + docker compose (plugin)
+- [ ] Garantir dockerd rodando
+- [ ] Clonar repositórios (GitHub)
+- [ ] Revisar códigos (Python + Node.js)
+- [ ] Ajustar Dockerfile base ubuntu:24.04
+- [ ] Build imagem cleudocode:local
+- [ ] Preparar volumes/config e .env do compose
+- [ ] Subir cleudocode-gateway
+- [ ] Rodar onboarding (OpenAI)
+- [ ] Configurar Telegram (token)
+- [ ] Concluir pairing Telegram
+- [ ] Validar resposta no Telegram

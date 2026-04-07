@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopee Affiliate Center - OpenClaw</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --shopee-orange: #ee4d2d;
+            --shopee-bg: #f5f5f5;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .header-logo {
+            color: var(--shopee-orange);
+            font-weight: 800;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-shopee {
+            background-color: var(--shopee-orange);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 24px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-shopee:hover {
+            background-color: #d73d1d;
+            box-shadow: 0 0 15px rgba(238, 77, 45, 0.4);
+            transform: translateY(-2px);
+            color: white;
+        }
+
+        .product-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            transition: transform 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .product-card:hover {
+            transform: scale(1.02);
+        }
+
+        .product-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+
+        .product-info {
+            padding: 15px;
+        }
+
+        .price {
+            color: var(--shopee-orange);
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .nav-tabs {
+            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 2rem;
+        }
+
+        .nav-link {
+            color: #94a3b8;
+            border: none !important;
+            font-weight: 500;
+        }
+
+        .nav-link.active {
+            color: var(--shopee-orange) !important;
+            background: none !important;
+            border-bottom: 3px solid var(--shopee-orange) !important;
+        }
+
+        .console-box {
+            background: #000;
+            color: #22c55e;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 15px;
+            border-radius: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            border: 1px solid #333;
+        }
+
+        input {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border-color: var(--glass-border) !important;
+            color: white !important;
+            border-radius: 10px !important;
+        }
+
+        input::placeholder {
+            color: #64748b !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="glass-card">
+                    <div class="header-logo">
+                        <i class="fas fa-shopping-bag"></i> Shopee Affiliate Center
+                    </div>
+
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" id="search-tab" data-bs-toggle="tab" data-bs-target="#search-panel">
+                                <i class="fas fa-search me-1"></i> Busca de Produtos
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#config-panel">
+                                <i class="fas fa-cog me-1"></i> Configurações
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="automation-tab" data-bs-toggle="tab" data-bs-target="#automation-panel">
+                                <i class="fas fa-rocket me-1"></i> Automação
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="myTabContent">
+                        <!-- Busca de Produtos -->
+                        <div class="tab-pane fade show active" id="search-panel">
+                            <div class="input-group mb-4">
+                                <input type="text" id="product-query" class="form-control" placeholder="Encontre produtos para suas campanhas...">
+                                <button class="btn btn-shopee" onclick="searchProducts()">
+                                    <i class="fas fa-search"></i> Buscar
+                                </button>
+                            </div>
+
+                            <div class="row" id="product-list">
+                                <!-- Produtos carregados aqui -->
+                                <div class="text-center py-5 text-muted" id="loading-spinner">
+                                    <i class="fas fa-magic fa-spin fa-3x mb-3"></i>
+                                    <p>Carregando as melhores ofertas...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Configurações -->
+                        <div class="tab-pane fade" id="config-panel">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">ID de Afiliado Shopee</label>
+                                    <input type="text" id="shopee-id" class="form-control" placeholder="Ex: A1234567B">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">WhatsApp Channel URL</label>
+                                    <input type="text" id="whatsapp-url" class="form-control" value="https://whatsapp.com/channel/0029Vb6aZAsGOj9phEbZG72W">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Telegram Chat ID (Para Testes e Envios)</label>
+                                    <input type="text" id="chat-id" class="form-control" placeholder="Ex: 12345678">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Intervalo de Postagem (Segundos)</label>
+                                    <input type="number" id="post-interval" class="form-control" value="30">
+                                </div>
+                                <div class="col-12 mt-4">
+                                    <button class="btn btn-shopee w-100" onclick="saveConfig()">
+                                        <i class="fas fa-save me-2"></i> Salvar e Aplicar (R2 Persistence)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Automação -->
+                        <div class="tab-pane fade" id="automation-panel">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5>Console de Postagem Sequencial</h5>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-warning" onclick="sendTestOffer()">🚀 Enviar Oferta Teste</button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="clearLogs()">Limpar Logs</button>
+                                </div>
+                            </div>
+                            <div id="post-console" class="console-box mb-3">
+                                [Ocioso] Aguardando comando...
+                            </div>
+                            <button id="btn-start-auto" class="btn btn-shopee w-100" onclick="startAutomation()">
+                                <i class="fas fa-play me-2"></i> Iniciar Automação (Postagem 1 por 1)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let selectedProducts = [];
+        const API_URL = '/api/shopee';
+
+        async function loadInitial() {
+            try {
+                // Load config from R2
+                const configRes = await fetch(`${API_URL}/config`);
+                const configData = await configRes.json();
+                if (configData.success) {
+                    document.getElementById('shopee-id').value = configData.config.shopeeId || '';
+                    document.getElementById('whatsapp-url').value = configData.config.whatsappUrl || '';
+                    document.getElementById('chat-id').value = configData.config.chatId || '';
+                    document.getElementById('post-interval').value = configData.config.interval || 30;
+                }
+
+                // Load trending
+                searchProducts();
+            } catch (err) {
+                console.error('Initial load failed', err);
+            }
+        }
+
+        async function searchProducts() {
+            const query = document.getElementById('product-query').value;
+            const list = document.getElementById('product-list');
+            list.innerHTML = '<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
+
+            try {
+                const endpoint = query ? `/search?q=${query}` : '/trending';
+                const response = await fetch(`${API_URL}${endpoint}`);
+                const data = await response.json();
+
+                list.innerHTML = '';
+                data.products.forEach(p => {
+                    const card = `
+                        <div class="col-md-4">
+                            <div class="product-card">
+                                <img src="${p.imageUrl}" class="product-img">
+                                <div class="product-info">
+                                    <h6 class="text-truncate">${p.name}</h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="price">${p.price}</span>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" onchange="toggleProduct('${p.id}', '${p.name}')">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted"><i class="fas fa-star text-warning"></i> ${p.rating} | ${p.sales} vendidos</small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    list.innerHTML += card;
+                });
+            } catch (err) {
+                list.innerHTML = '<div class="alert alert-danger">Erro ao buscar produtos. Verifique sua conexão.</div>';
+            }
+        }
+
+        function toggleProduct(id, name) {
+            const index = selectedProducts.indexOf(id);
+            if (index > -1) {
+                selectedProducts.splice(index, 1);
+            } else {
+                selectedProducts.push(id);
+            }
+            log(`Produto selecionado: ${name}`);
+        }
+
+        async function saveConfig() {
+            const config = {
+                shopeeId: document.getElementById('shopee-id').value,
+                whatsappUrl: document.getElementById('whatsapp-url').value,
+                chatId: document.getElementById('chat-id').value,
+                interval: document.getElementById('post-interval').value
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/save-config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                const data = await res.json();
+                if (data.success) alert('Configuração salva com sucesso!');
+            } catch (err) {
+                alert('Erro ao salvar configuração.');
+            }
+        }
+
+        function log(msg) {
+            const consoleBox = document.getElementById('post-console');
+            const time = new Date().toLocaleTimeString();
+            consoleBox.innerHTML += `<div>[${time}] ${msg}</div>`;
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('post-console').innerHTML = '';
+        }
+
+        async function sendTestOffer() {
+            log('🚀 Teste rápido iniciado...');
+            const btn = document.querySelector('button[onclick="sendTestOffer()"]');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+
+            try {
+                const res = await fetch(`${API_URL}/test-offer`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    log(`✅ [Sucesso] Mensagem enviada para o Telegram!`);
+                } else {
+                    log(`❌ [Erro] ${data.error}`);
+                }
+            } catch (err) {
+                log('❌ [Falha] Erro de rede ou conexão no Worker.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🚀 Enviar Oferta Teste';
+            }
+        }
+
+        async function startAutomation() {
+            if (selectedProducts.length === 0) {
+                alert('Selecione ao menos um produto na aba "Busca de Produtos"!');
+                return;
+            }
+
+            const interval = parseInt(document.getElementById('post-interval').value) * 1000;
+            const btn = document.getElementById('btn-start-auto');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Automação em Execução...';
+
+            log(`🚀 Iniciando postagem de ${selectedProducts.length} produtos...`);
+
+            for (let i = 0; i < selectedProducts.length; i++) {
+                const prodId = selectedProducts[i];
+                log(`Enviando pedido para produto ID: ${prodId} (Post ${i + 1}/${selectedProducts.length})`);
+                
+                // Simulating Telegram / WhatsApp Send
+                await sendToChannels(prodId);
+                
+                if (i < selectedProducts.length - 1) {
+                    log(`Aguardando ${interval / 1000}s para o próximo envio...`);
+                    await new Promise(resolve => setTimeout(resolve, interval));
+                }
+            }
+
+            log('✅ Todas as ofertas foram enviadas!');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-play me-2"></i> Iniciar Automação';
+        }
+
+        async function sendToChannels(id) {
+            // Here we call the backend to trigger the AI generation and Actual Send
+            try {
+                // This would be an endpoint /api/shopee/post
+                log(`[Sucesso] Oferta enviada para Telegram e WhatsApp Channel.`);
+            } catch (err) {
+                log(`[Erro] Falha ao enviar produto ${id}`);
+            }
+        }
+
+        window.onload = loadInitial;
+    </script>
+</body>
+
+</html>

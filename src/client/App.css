@@ -7,7 +7,7 @@
 
 .app-header {
   background-color: var(--surface-color);
-  padding: 1rem 2rem;
+  padding: 16px 24px;
   border-bottom: 1px solid var(--border-color);
   box-shadow: var(--shadow);
   display: flex;
@@ -22,13 +22,13 @@
 
 .app-header h1 {
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
 .app-main {
   flex: 1;
-  padding: 2rem;
+  padding: var(--container-padding);
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
@@ -37,10 +37,10 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .app-header {
-    padding: 1rem;
+    padding: 16px;
   }
 
   .app-main {
-    padding: 1rem;
+    padding: 16px;
   }
 }

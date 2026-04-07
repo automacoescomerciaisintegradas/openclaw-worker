@@ -332,6 +332,30 @@ adminApi.post('/gateway/restart', async (c) => {
   }
 });
 
+/**
+ * POST /admin/telegram/setup-webhook
+ * Configures the Telegram webhook to point to this Worker.
+ */
+adminApi.post('/telegram/setup-webhook', async (c) => {
+  try {
+    const { token } = await c.req.json();
+    const botToken = token || c.env.TELEGRAM_BOT_TOKEN;
+    if (!botToken) return c.json({ success: false, error: 'Token missing' }, 400);
+    const url = new URL(c.req.url);
+    const host = c.env.WORKER_URL || `${url.protocol}//${url.host}`;
+    const webhookUrl = `${host}/telegram-webhook/${botToken}`;
+    const response = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: webhookUrl })
+    });
+    const result: any = await response.json();
+    return c.json({ success: result.ok, result });
+  } catch (error) {
+    return c.json({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }, 500);
+  }
+});
+
 // Mount admin API routes under /admin
 api.route('/admin', adminApi);
 

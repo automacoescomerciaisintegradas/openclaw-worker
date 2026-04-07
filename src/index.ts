@@ -27,11 +27,12 @@ import type { AppEnv, openclawEnv } from './types';
 import { OPENCLAW_PORT } from './config';
 import { createAccessMiddleware } from './auth';
 import { ensureopenclawGateway, findExistingopenclawProcess, syncToR2 } from './gateway';
-import { publicRoutes, api, adminUi, debug, cdp } from './routes';
-import loadingPageHtml from './assets/loading.html';
-import configErrorHtml from './assets/config-error.html';
 import whatsappHtml from './assets/whatsapp/index.html';
 import telegramHtml from './assets/telegram/index.html';
+import shopeeHtml from './assets/shopee/index.html';
+import loadingPageHtml from './assets/loading.html';
+import configErrorHtml from './assets/config-error.html';
+import { publicRoutes, api, adminUi, debug, cdp, telegramRoutes, shopeeRoutes } from './routes';
 
 /**
  * Transform error messages from the gateway to be more user-friendly.
@@ -57,7 +58,8 @@ function transformErrorMessage(message: string, host: string): string {
 function validateRequiredEnv(env: openclawEnv): string[] {
   const missing: string[] = [];
 
-  if (!env.openclaw_GATEWAY_TOKEN) {
+  // Accept both openclaw_GATEWAY_TOKEN and GATEWAY_TOKEN for backwards compatibility
+  if (!env.openclaw_GATEWAY_TOKEN && !(env as any).GATEWAY_TOKEN) {
     missing.push('openclaw_GATEWAY_TOKEN');
   }
 
@@ -113,6 +115,38 @@ function buildSandboxOptions(env: openclawEnv): SandboxOptions {
 const app = new Hono<AppEnv>();
 
 // =============================================================================
+// LITE MODE / DASHBOARDS (High Priority)
+// =============================================================================
+
+// Shopee Affiliate Dashboard (Lite Mode)
+app.get('/shopee', (c) => {
+  console.log('[DEBUG] Accessing /shopee Dashboard');
+  console.log('[DEBUG] Shopee HTML length:', shopeeHtml?.length || 0);
+  
+  if (!shopeeHtml) {
+    console.error('[ERROR] shopeeHtml content is MISSING');
+    return c.text('Erro interno: Dashboard content missing', 500);
+  }
+
+  c.header('X-Debug-Shopee', 'Matched');
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate');
+  return c.html(shopeeHtml);
+});
+
+// Shopee API
+app.route('/api/shopee', shopeeRoutes);
+
+// WhatsApp Pairing UI (Lite Mode compatible)
+app.get('/whatsapp', (c) => c.html(whatsappHtml));
+
+// Telegram Pairing UI (Lite Mode compatible)
+app.get('/telegram', (c) => c.html(telegramHtml));
+
+// Telegram Webhook (Native Worker Mode)
+app.route('/telegram-webhook', telegramRoutes);
+
+
+// =============================================================================
 // MIDDLEWARE: Applied to ALL routes
 // =============================================================================
 
@@ -140,12 +174,6 @@ app.use('*', async (c, next) => {
 // =============================================================================
 // PUBLIC ROUTES: No Cloudflare Access authentication required
 // =============================================================================
-
-// WhatsApp Pairing UI (Lite Mode compatible)
-app.get('/whatsapp', (c) => c.html(whatsappHtml));
-
-// Telegram Pairing UI (Lite Mode compatible)
-app.get('/telegram', (c) => c.html(telegramHtml));
 
 // Mount public routes first (before auth middleware)
 // Includes: /sandbox-health, /logo.png, /logo-small.png, /api/status, /_admin/assets/*
@@ -197,6 +225,22 @@ app.use('*', async (c, next) => {
 
 // Middleware: Cloudflare Access authentication for protected routes
 app.use('*', async (c, next) => {
+  const url = new URL(c.req.url);
+  
+  // Skip authentication for automation dashboards and webhooks
+  const isPublicPath = 
+    url.pathname === '/shopee' || 
+    url.pathname.startsWith('/api/shopee') ||
+    url.pathname === '/whatsapp' || 
+    url.pathname === '/telegram' || 
+    url.pathname.startsWith('/telegram-webhook');
+
+  if (isPublicPath) {
+    console.log('[ACCESS] Skipping authentication for public dashboard:', url.pathname);
+    c.header('X-Shopee-Status', 'Public-Open');
+    return next();
+  }
+
   // Determine response type based on Accept header
   const acceptsHtml = c.req.header('Accept')?.includes('text/html');
   const middleware = createAccessMiddleware({ 
@@ -409,8 +453,8 @@ async function scheduled(
   _ctx: ExecutionContext
 ): Promise<void> {
   // Guard for Lite Mode (no Sandbox container)
-  if (!env.Sandbox) {
-    console.log('[cron] Skipping backup sync: Sandbox not available in Lite Mode.');
+  if (!env.Sandbox || typeof env.Sandbox.idFromName !== 'function') {
+    console.log('[cron] Skipping backup sync: Sandbox namespace not available or methods missing.');
     return;
   }
 

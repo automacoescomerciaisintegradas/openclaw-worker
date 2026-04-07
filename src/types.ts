@@ -6,7 +6,7 @@ import type { Sandbox } from '@cloudflare/sandbox';
 export interface openclawEnv {
   Sandbox: DurableObjectNamespace<Sandbox>;
   ASSETS: Fetcher; // Assets binding for admin UI static files
-  openclaw_BUCKET: R2Bucket; // R2 bucket for persistent storage
+  OPENCLAW_BUCKET: R2Bucket; // R2 bucket for persistent storage
   // AI Gateway configuration (preferred)
   AI_GATEWAY_API_KEY?: string; // API key for the provider configured in AI Gateway
   AI_GATEWAY_BASE_URL?: string; // AI Gateway URL (e.g., https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/anthropic)
